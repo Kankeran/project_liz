@@ -1,0 +1,6 @@
+service_generator:
+  struct: "generators.Service"
+reference_parser:
+  constructor: "parsers.NewReference"
+  arguments:
+    - "make(map[string]interface{})"
