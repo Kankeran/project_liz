@@ -6,14 +6,10 @@ import (
 	"Liz/generated"
 	"Liz/generators"
 	"Liz/parsers"
-	"fmt"
-	"go/token"
-	"log"
 	"os"
-	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/sqs/goreturns/returns"
-	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
 
@@ -23,12 +19,8 @@ func check(e error) {
 	}
 }
 
-func Build() {
-	di.NewContainer(generated.Services)
-}
-
 func main() {
-	Build()
+	generated.Build()
 	servicesMap, err := parsers.ReadYamlFile("./config/services.yaml")
 	check(err)
 
@@ -36,10 +28,15 @@ func main() {
 	check(err)
 
 	var generator = di.Container.Get("service_generator").(*generators.Service)
-	var code = "package generated\n\nvar Services = map[string]func() interface{} {\n"
+	var code = `package generated
+	
+	// Build building di container
+	func Build() {
+
+		`
 
 	for serviceName, serviceMap := range servicesMap.(map[interface{}]interface{}) {
-		code += "\"" + serviceName.(string) + "\": " + generator.Generate(elements.NewService(serviceMap.(map[interface{}]interface{})))
+		code += "di.Container.Set(\"" + serviceName.(string) + "\", " + generator.Generate(elements.NewService(serviceMap.(map[interface{}]interface{}))) + ")\n\n"
 	}
 	code += "}"
 
@@ -49,18 +46,18 @@ func main() {
 
 	check(writeToFile(output))
 
-	fill()
+	//fill()
 }
 
 func formatCode(data string) (output []byte, err error) {
 	output, err = returns.Process("./", "", []byte(data), nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	output, err = imports.Process("", output, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return output, nil
@@ -93,34 +90,34 @@ func writeToFile(data []byte) error {
 	return nil
 }
 
-func absPath(filename string) (string, error) {
-	eval, err := filepath.EvalSymlinks(filename)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Abs(eval)
-}
+// func absPath(filename string) (string, error) {
+// 	eval, err := filepath.EvalSymlinks(filename)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return filepath.Abs(eval)
+// }
 
-func fill() {
-	path, err := absPath("./")
-	if err != nil {
-		log.Fatal(err)
-	}
+// func fill() {
+// 	path, err := absPath("./")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	cfg := &packages.Config{
-		Mode:  packages.LoadAllSyntax,
-		Tests: true,
-		Dir:   filepath.Dir(path),
-		Fset:  token.NewFileSet(),
-		Env:   os.Environ(),
-	}
+// 	cfg := &packages.Config{
+// 		Mode:  packages.LoadAllSyntax,
+// 		Tests: true,
+// 		Dir:   filepath.Dir(path),
+// 		Fset:  token.NewFileSet(),
+// 		Env:   os.Environ(),
+// 	}
 
-	pkgs, err := packages.Load(cfg)
-	if err != nil {
-		log.Fatal(err)
-	}
+// 	pkgs, err := packages.Load(cfg)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	for _, pkg := range pkgs {
-		fmt.Printf("%v\n", pkg)
-	}
-}
+// 	for _, pkg := range pkgs {
+// 		fmt.Printf("%v\n", pkg)
+// 	}
+// }

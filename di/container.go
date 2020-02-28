@@ -6,14 +6,9 @@ type container struct {
 }
 
 // Container useful for di
-var Container *container
-
-// NewContainer creates new di container
-func NewContainer(services map[string]func() interface{}) {
-	Container = &container{
-		services:         make(map[string]interface{}),
-		servicesCreators: services,
-	}
+var Container = &container{
+	services:         make(map[string]interface{}),
+	servicesCreators: make(map[string]func() interface{}),
 }
 
 func (c *container) Get(serviceName string) interface{} {
@@ -24,4 +19,14 @@ func (c *container) Get(serviceName string) interface{} {
 	}
 
 	return service
+}
+
+func (c *container) Has(serviceName string) bool {
+	_, ok := c.servicesCreators[serviceName]
+
+	return ok
+}
+
+func (c *container) Set(serviceName string, serviceCreator func() interface{}) {
+	c.servicesCreators[serviceName] = serviceCreator
 }
