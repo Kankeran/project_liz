@@ -1,30 +1,39 @@
 package generated
 
 import (
-	"Liz/di"
+	"Liz/container"
 	"Liz/generators"
 	"Liz/parsers"
 )
 
-// Build building di container
+// Build building container container
 func Build() {
 
-	di.Container.Set("service_generator", func() interface{} {
-		service := &generators.Service{}
+	container.Set("service_parser", func() interface{} {
+		service := &parsers.Service{}
+
 		return service
 	})
 
-	di.Container.Set("reference_parser", func() interface{} {
-		service := parsers.NewReference(
-			make(map[string]interface{}),
-		)
-		return service
-	})
-
-	di.Container.Set("yaml_file_reader", func() interface{} {
+	container.Set("yaml_file_reader", func() interface{} {
 		service := parsers.NewYamlFileReader(
 			make(map[string]interface{}),
 		)
+
+		return service
+	})
+
+	container.Set("service_generator", func() interface{} {
+		service := &generators.Service{}
+
+		return service
+	})
+
+	container.Set("reference_parser", func() interface{} {
+		service := parsers.NewReference(
+			make(map[string]interface{}),
+		)
+
 		return service
 	})
 

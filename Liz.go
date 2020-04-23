@@ -1,12 +1,13 @@
 package main
 
 import (
-	"Liz/di"
+	"os"
+
+	"Liz/container"
 	"Liz/elements"
 	"Liz/generated"
 	"Liz/generators"
 	"Liz/parsers"
-	"os"
 
 	"github.com/pkg/errors"
 	"github.com/sqs/goreturns/returns"
@@ -26,17 +27,18 @@ func main() {
 
 	servicesMap, err = parseReferences(servicesMap.(map[interface{}]interface{}), "./config/services.yaml")
 	check(err)
+	servicesMap = parseServices(servicesMap.(map[interface{}]interface{}))
 
-	var generator = di.Container.Get("service_generator").(*generators.Service)
+	var generator = container.Get("service_generator").(*generators.Service)
 	var code = `package generated
-	
-	// Build building di container
+
+	// Build building container container
 	func Build() {
 
 		`
 
 	for serviceName, serviceMap := range servicesMap.(map[interface{}]interface{}) {
-		code += "di.Container.Set(\"" + serviceName.(string) + "\", " + generator.Generate(elements.NewService(serviceMap.(map[interface{}]interface{}))) + ")\n\n"
+		code += "container.Set(\"" + serviceName.(string) + "\", " + generator.Generate(elements.NewService(serviceMap.(map[interface{}]interface{}))) + ")\n\n"
 	}
 	code += "}"
 
@@ -46,7 +48,7 @@ func main() {
 
 	check(writeToFile(output))
 
-	//fill()
+	// fill()
 }
 
 func formatCode(data string) (output []byte, err error) {
@@ -64,7 +66,11 @@ func formatCode(data string) (output []byte, err error) {
 }
 
 func parseReferences(source map[interface{}]interface{}, filePath string) (interface{}, error) {
-	return di.Container.Get("reference_parser").(*parsers.Reference).Parse(source, filePath)
+	return container.Get("reference_parser").(*parsers.Reference).Parse(source, filePath)
+}
+
+func parseServices(source map[interface{}]interface{}) map[interface{}]interface{} {
+	return container.Get("service_parser").(*parsers.Service).Parse(source)
 }
 
 func writeToFile(data []byte) error {

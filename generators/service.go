@@ -1,8 +1,9 @@
 package generators
 
 import (
-	"Liz/elements"
 	"fmt"
+
+	"Liz/elements"
 )
 
 // Service generator struct
@@ -22,9 +23,13 @@ func (s *Service) Generate(service *elements.Service) string {
 	}
 
 	for _, val := range service.Calls {
-		code += "" + val + "\n"
+		code += "service." + val.Method + "("
+		for _, argument := range val.Arguments {
+			code += argument.(string)
+		}
+		code += ")\n"
 	}
-	code += "return " + fmt.Sprint(service.Returns) + "\n}"
+	code += "\nreturn " + fmt.Sprint(service.Returns) + "\n}"
 
 	return code
 }

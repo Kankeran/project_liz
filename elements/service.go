@@ -7,8 +7,14 @@ type Service struct {
 	StructName  string
 	Constructor string
 	Arguments   []interface{}
-	Calls       []string
+	Calls       []Call
 	Returns     interface{}
+	Lifecycle   string
+}
+
+type Call struct {
+	Method    string
+	Arguments []interface{}
 }
 
 // NewService create new Service struct
@@ -19,6 +25,7 @@ func NewService(serviceMap map[interface{}]interface{}) *Service {
 		Arguments:   getArguments(serviceMap),
 		Calls:       getCalls(serviceMap),
 		Returns:     getReturns(serviceMap),
+		Lifecycle:   getLifeCycle(serviceMap),
 	}
 
 	if len(service.Constructor) == 0 && len(service.StructName) == 0 {
@@ -37,20 +44,20 @@ func getReturns(serviceMap map[interface{}]interface{}) interface{} {
 	return "service"
 }
 
-func getCalls(serviceMap map[interface{}]interface{}) []string {
+func getCalls(serviceMap map[interface{}]interface{}) []Call {
 	val, ok := serviceMap["calls"]
 	if ok {
 		val, ok := val.([]interface{})
 		if !ok {
-			panic(fmt.Errorf("calls accepts only array of strings"))
+			panic(fmt.Errorf("calls accepts only array of objects"))
 		}
-		var arr []string
+		var arr []Call
 		for _, elem := range val {
 			switch v := elem.(type) {
-			case string:
-				arr = append(arr, v)
+			case map[interface{}]interface{}:
+				arr = append(arr, Call{v["method"].(string), v["arguments"].([]interface{})})
 			default:
-				panic(fmt.Errorf("calls accepts only array of strings"))
+				panic(fmt.Errorf("calls accepts only array of objects"))
 			}
 		}
 
@@ -100,4 +107,18 @@ func getConstructor(serviceMap map[interface{}]interface{}) string {
 	}
 
 	return ""
+}
+
+func getLifeCycle(serviceMap map[interface{}]interface{}) string {
+	val, ok := serviceMap["lifecycle"]
+	if ok {
+		val, ok := val.(string)
+		if !ok {
+			panic(fmt.Errorf("lifecycle accepts only string"))
+		}
+
+		return val
+	}
+
+	return "perm"
 }
