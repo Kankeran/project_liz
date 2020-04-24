@@ -64,6 +64,6 @@ func (s *Service) getStructName(servicesMap map[interface{}]interface{}, service
 	if name, ok := serviceData["struct"]; ok {
 		return name.(string)
 	}
-	// @TODO
-	panic("Cannot get struct name from service " + serviceName)
+
+	panic("Cannot get struct name from service " + serviceName + " reason: field struct is empty")
 }

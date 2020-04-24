@@ -12,14 +12,14 @@ type Service struct{}
 // Generate builds code
 func (s *Service) Generate(service *elements.Service) string {
 	var code = "func() interface{}{\n"
-	if len(service.StructName) != 0 {
-		code += "service := &" + service.StructName + "{"
-		code += s.addArguments(service)
-		code += "}\n"
-	} else {
+	if len(service.Constructor) != 0 {
 		code += "service := " + service.Constructor + "("
 		code += s.addArguments(service)
 		code += ")\n"
+	} else {
+		code += "service := &" + service.StructName + "{"
+		code += s.addArguments(service)
+		code += "}\n"
 	}
 
 	for _, val := range service.Calls {

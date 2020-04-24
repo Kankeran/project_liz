@@ -2,6 +2,7 @@ service_generator:
   struct: "generators.Service"
 
 reference_parser:
+  struct: "parsers.Reference"
   constructor: "parsers.NewReference"
   arguments:
     - "make(map[string]interface{})"
@@ -10,6 +11,7 @@ service_parser:
   struct: "parsers.Service"
 
 yaml_file_reader:
+  struct: "parsers.YamlFileReader"
   constructor: "parsers.NewYamlFileReader"
   arguments:
     - "make(map[string]interface{})"

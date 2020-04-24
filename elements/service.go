@@ -92,7 +92,7 @@ func getStruct(serviceMap map[interface{}]interface{}) string {
 		return val
 	}
 
-	return ""
+	panic("field 'struct' is require in service")
 }
 
 func getConstructor(serviceMap map[interface{}]interface{}) string {
