@@ -10,6 +10,7 @@ var containerInstance = &containerStruct{
 	servicesCreators: make(map[string]func() interface{}),
 }
 
+// Get getting searched service instance
 func Get(serviceName string) interface{} {
 	service, ok := containerInstance.services[serviceName]
 	if !ok {
@@ -20,12 +21,14 @@ func Get(serviceName string) interface{} {
 	return service
 }
 
+// Has check service exists
 func Has(serviceName string) bool {
 	_, ok := containerInstance.servicesCreators[serviceName]
 
 	return ok
 }
 
+// Set sets function to invoking service with specified name
 func Set(serviceName string, serviceCreator func() interface{}) {
 	containerInstance.servicesCreators[serviceName] = serviceCreator
 }

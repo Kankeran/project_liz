@@ -91,7 +91,11 @@ func writeToFile(data []byte) error {
 		return err
 	}
 
-	file.Write(data)
+	_, err = file.Write(data)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
