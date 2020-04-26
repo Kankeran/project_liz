@@ -2,20 +2,18 @@ package parsers
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strings"
-
-	"gopkg.in/yaml.v2"
 )
 
 // Reference is tool to include all references to one source
 type Reference struct {
 	referencesFiles map[string]interface{}
+	reader          *YamlFileReader
 }
 
 // NewReference create new reference parser
-func NewReference(maping map[string]interface{}) *Reference {
-	return &Reference{maping}
+func NewReference(mapping map[string]interface{}, reader *YamlFileReader) *Reference {
+	return &Reference{mapping, reader}
 }
 
 // Parse parses all references to one source
@@ -74,7 +72,7 @@ func (r *Reference) readReferences(reference interface{}, destination interface{
 				}
 				continue
 			}
-			return nil, fmt.Errorf("Bad type reference '%v', must be string with format: 'file_path#path_to_element'", reference)
+			return nil, fmt.Errorf("bad type reference '%v', must be string with format: 'file_path#path_to_element'", reference)
 		}
 	case string:
 		destination, err = r.readReference(typedValue, destination, filePath)
@@ -82,7 +80,7 @@ func (r *Reference) readReferences(reference interface{}, destination interface{
 			return nil, err
 		}
 	default:
-		return nil, fmt.Errorf("Bad type reference '%v', must be string or array of strings with format: 'file_path#path_to_element'", reference)
+		return nil, fmt.Errorf("bad type reference '%v', must be string or array of strings with format: 'file_path#path_to_element'", reference)
 	}
 
 	return destination, nil
@@ -103,7 +101,7 @@ func (r *Reference) readReference(reference string, currentFile interface{}, fil
 	if len(elementName) > 0 {
 		mapedRefData, ok := refData.(map[interface{}]interface{})
 		if !ok {
-			return nil, fmt.Errorf("Referenced source is not an object")
+			return nil, fmt.Errorf("referenced source is not an object")
 		}
 		refData, err = r.getData(mapedRefData, elementName)
 		if err != nil {
@@ -118,7 +116,7 @@ func (r *Reference) readReference(reference string, currentFile interface{}, fil
 			r.mergeMaps(refData.(map[interface{}]interface{}), currentFile.(map[interface{}]interface{}))
 		default:
 			if len(currentFile.(map[interface{}]interface{})) > 1 {
-				return nil, fmt.Errorf("Cannot merge object with non object element")
+				return nil, fmt.Errorf("cannot merge object with non object element")
 			}
 			currentFile = refData
 		}
@@ -139,7 +137,7 @@ func (r *Reference) getExternalFileData(filePath string) (interface{}, error) {
 	refData, ok := r.referencesFiles[filePath]
 	if !ok {
 		var err error
-		refData, err = ReadYamlFile(filePath)
+		refData, err = r.reader.Read(filePath)
 		if err != nil {
 			return nil, err
 		}
@@ -177,10 +175,10 @@ func (r *Reference) prepareReferencePath(refPath string) (filePath string, eleme
 }
 
 func (r *Reference) getData(source map[interface{}]interface{}, path string) (interface{}, error) {
-	var serchedElement interface{} = source
+	var searchedElement interface{} = source
 	for _, elementName := range strings.Split(path, "/") {
 
-		source, ok := serchedElement.(map[interface{}]interface{})
+		source, ok := searchedElement.(map[interface{}]interface{})
 		if !ok {
 			return nil, fmt.Errorf("element '%s' not found", path)
 		}
@@ -189,21 +187,8 @@ func (r *Reference) getData(source map[interface{}]interface{}, path string) (in
 		if !ok {
 			return nil, fmt.Errorf("element '%s' not found", path)
 		}
-		serchedElement = element
+		searchedElement = element
 	}
 
-	return serchedElement, nil
-}
-
-// ReadYamlFile open and unmarshal yaml file
-func ReadYamlFile(fileName string) (interface{}, error) {
-	data, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	var unmarshaledData interface{}
-	err = yaml.Unmarshal([]byte(data), &unmarshaledData)
-
-	return unmarshaledData, err
+	return searchedElement, nil
 }

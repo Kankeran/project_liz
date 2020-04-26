@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"Liz/container"
 	"Liz/elements"
-	"Liz/generated"
 	"Liz/generators"
+	"Liz/kernel/container"
+	"Liz/kernel/services"
 	"Liz/parsers"
 
 	"github.com/pkg/errors"
@@ -21,8 +21,9 @@ func check(e error) {
 }
 
 func main() {
-	generated.Build()
-	servicesMap, err := parsers.ReadYamlFile("./config/services.yaml")
+	services.Build()
+
+	servicesMap, err := container.Get("yaml_file_reader").(*parsers.YamlFileReader).Read("./config/services.yaml")
 	check(err)
 
 	servicesMap, err = parseReferences(servicesMap.(map[interface{}]interface{}), "./config/services.yaml")
@@ -30,7 +31,7 @@ func main() {
 	servicesMap = parseServices(servicesMap.(map[interface{}]interface{}))
 
 	var generator = container.Get("service_generator").(*generators.Service)
-	var code = `package generated
+	var code = `package services
 
 	// Build building container container
 	func Build() {
@@ -43,6 +44,7 @@ func main() {
 	code += "}"
 
 	var output []byte
+	// println(code)
 	output, err = formatCode(code)
 	check(err)
 
@@ -70,7 +72,10 @@ func parseReferences(source map[interface{}]interface{}, filePath string) (inter
 }
 
 func parseServices(source map[interface{}]interface{}) map[interface{}]interface{} {
-	return container.Get("service_parser").(*parsers.Service).Parse(source)
+	serviceParser := container.Get("service_parser").(*parsers.Service)
+	serviceParser.SetOriginalServicesMap(source)
+
+	return serviceParser.Parse(source).(map[interface{}]interface{})
 }
 
 func writeToFile(data []byte) error {
@@ -79,14 +84,14 @@ func writeToFile(data []byte) error {
 		file *os.File
 	)
 
-	if _, err = os.Stat("generated"); os.IsNotExist(err) {
-		err = os.MkdirAll("generated", os.ModePerm)
+	if _, err = os.Stat("kernel/services"); os.IsNotExist(err) {
+		err = os.MkdirAll("kernel/services", os.ModePerm)
 		if err != nil {
 			return err
 		}
 	}
 
-	file, err = os.Create("generated/services.go")
+	file, err = os.Create("kernel/services/services.go")
 	if err != nil {
 		return err
 	}

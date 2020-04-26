@@ -6,6 +6,7 @@ reference_parser:
   constructor: "parsers.NewReference"
   arguments:
     - "make(map[string]interface{})"
+    - "@yaml_file_reader"
 
 service_parser:
   struct: "parsers.Service"

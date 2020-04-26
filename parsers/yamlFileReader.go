@@ -15,17 +15,17 @@ func NewYamlFileReader(mapping map[string]interface{}) *YamlFileReader {
 }
 
 func (y *YamlFileReader) Read(fileName string) (interface{}, error) {
-	unmarshaledData, ok := y.sourceFiles[fileName]
+	unmarshalledData, ok := y.sourceFiles[fileName]
 	if ok {
-		return unmarshaledData, nil
+		return unmarshalledData, nil
 	}
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return nil, err
 	}
 
-	err = yaml.Unmarshal([]byte(data), &unmarshaledData)
-	y.sourceFiles[fileName] = unmarshaledData
+	err = yaml.Unmarshal(data, &unmarshalledData)
+	y.sourceFiles[fileName] = unmarshalledData
 
-	return unmarshaledData, err
+	return unmarshalledData, err
 }
