@@ -88,7 +88,6 @@ func (r *Reference) readReferences(reference interface{}, destination interface{
 
 func (r *Reference) readReference(reference string, currentFile interface{}, filePath string) (interface{}, error) {
 	externalFilePath, elementName := r.prepareReferencePath(reference)
-	var refData = currentFile
 	if len(externalFilePath) == 0 {
 		externalFilePath = filePath
 	}
