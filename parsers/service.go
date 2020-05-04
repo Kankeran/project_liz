@@ -5,14 +5,17 @@ import (
 	"strings"
 )
 
+// Service used to parse service properties
 type Service struct {
 	servicesMap map[interface{}]interface{}
 }
 
+// SetOriginalServicesMap set source map of yaml to getting original data
 func (s *Service) SetOriginalServicesMap(servicesMap map[interface{}]interface{}) {
 	s.servicesMap = servicesMap
 }
 
+// Parse parses service properties
 func (s *Service) Parse(servicesMap interface{}) interface{} {
 	switch services := servicesMap.(type) {
 	case map[interface{}]interface{}:

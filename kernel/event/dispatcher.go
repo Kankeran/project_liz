@@ -20,14 +20,17 @@ type dispatcher struct {
 
 var dispatcherInstance *dispatcher
 
+// Dispatch asynchronously call event by name
 func Dispatch(name string, data interface{}) {
 	dispatcherInstance.dispatch(name, data)
 }
 
+// DispatchSync synchronously call event by name
 func DispatchSync(name string, data interface{}) {
 	dispatcherInstance.dispatchSync(name, data)
 }
 
+// PrepareDispatcher prepares and operates the dispatch system
 func PrepareDispatcher(events map[string][]func(*Data)) {
 	dispatcherInstance := &dispatcher{
 		make(chan *dispatchData),

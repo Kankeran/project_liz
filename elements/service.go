@@ -7,12 +7,12 @@ type Service struct {
 	StructName  string
 	Constructor string
 	Arguments   []interface{}
-	Calls       []Call
+	Calls       []call
 	Returns     interface{}
 	Lifecycle   string
 }
 
-type Call struct {
+type call struct {
 	Method    string
 	Arguments []interface{}
 }
@@ -44,18 +44,18 @@ func getReturns(serviceMap map[interface{}]interface{}) interface{} {
 	return "service"
 }
 
-func getCalls(serviceMap map[interface{}]interface{}) []Call {
+func getCalls(serviceMap map[interface{}]interface{}) []call {
 	val, ok := serviceMap["calls"]
 	if ok {
 		val, ok := val.([]interface{})
 		if !ok {
 			panic(fmt.Errorf("calls accepts only array of objects"))
 		}
-		var arr []Call
+		var arr []call
 		for _, elem := range val {
 			switch v := elem.(type) {
 			case map[interface{}]interface{}:
-				arr = append(arr, Call{v["method"].(string), v["arguments"].([]interface{})})
+				arr = append(arr, call{v["method"].(string), v["arguments"].([]interface{})})
 			default:
 				panic(fmt.Errorf("calls accepts only array of objects"))
 			}
