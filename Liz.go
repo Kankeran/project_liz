@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"os"
 
 	"Liz/elements"
@@ -21,7 +23,36 @@ func check(e error) {
 }
 
 func main() {
+	newCmd := flag.NewFlagSet("new", flag.ExitOnError)
+	newName := newCmd.String("name", "App", "type new project name")
+
+	newCmd.Usage = func(){
+		fmt.Fprintf(os.Stderr, "Usage of %s [new|build] [flags...]\n", os.Args[0])
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\nflags for new\n")
+		newCmd.PrintDefaults()
+	}
+	flag.Usage = newCmd.Usage
+	flag.Parse()
+
+	if len(os.Args) < 2 {
+		flag.Usage()
+		os.Exit(2)
+	}
+
 	services.Build()
+
+	switch os.Args[1] {
+	case "new":
+		check(newCmd.Parse(os.Args[2:]))
+		fmt.Println(*newName)
+		return
+	case "build":
+		break
+	default:
+		flag.Usage()
+		os.Exit(2)
+	}
 
 	servicesMap, err := container.Get("yaml_file_reader").(*parsers.YamlFileReader).Read("./config/services.yaml")
 	check(err)
@@ -32,12 +63,7 @@ func main() {
 	servicesMap = parseServices(servicesMap.(map[interface{}]interface{}))
 
 	var generator = container.Get("service_generator").(*generators.Service)
-	var code = `package services
-
-	// Build building container container
-	func Build() {
-
-		`
+	var code = "package services\n // Build building container container\n func Build() {\n\n"
 
 	for serviceName, serviceMap := range servicesMap.(map[interface{}]interface{}) {
 		code += "container.Set(\"" + serviceName.(string) + "\", " + generator.Generate(elements.NewService(serviceMap.(map[interface{}]interface{}))) + ")\n\n"
