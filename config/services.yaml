@@ -1,18 +1,19 @@
-service_generator:
-  struct: "generators.Service"
+services:
+  service_generator:
+    struct: "generators.Service"
 
-reference_parser:
-  struct: "parsers.Reference"
-  constructor: "parsers.NewReference"
-  arguments:
-    - "make(map[string]interface{})"
-    - "@yaml_file_reader"
+  reference_parser:
+    struct: "parsers.Reference"
+    constructor: "parsers.NewReference"
+    arguments:
+      - "make(map[string]interface{})"
+      - "@yaml_file_reader"
 
-service_parser:
-  struct: "parsers.Service"
+  service_parser:
+    struct: "parsers.Service"
 
-yaml_file_reader:
-  struct: "parsers.YamlFileReader"
-  constructor: "parsers.NewYamlFileReader"
-  arguments:
-    - "make(map[string]interface{})"
+  yaml_file_reader:
+    struct: "parsers.YamlFileReader"
+    constructor: "parsers.NewYamlFileReader"
+    arguments:
+      - "make(map[string]interface{})"

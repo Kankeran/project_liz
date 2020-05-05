@@ -28,6 +28,7 @@ func main() {
 
 	servicesMap, err = parseReferences(servicesMap.(map[interface{}]interface{}), "./config/services.yaml")
 	check(err)
+	servicesMap = servicesMap.(map[interface{}]interface{})["services"]
 	servicesMap = parseServices(servicesMap.(map[interface{}]interface{}))
 
 	var generator = container.Get("service_generator").(*generators.Service)
