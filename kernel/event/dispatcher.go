@@ -15,7 +15,7 @@ type dispatchData struct {
 
 type dispatcher struct {
 	eventChannel chan *dispatchData
-	events       map[string][]func(*Data)
+	listeners       map[string]func(*Data)
 }
 
 var dispatcherInstance *dispatcher
@@ -31,10 +31,10 @@ func DispatchSync(name string, data interface{}) {
 }
 
 // PrepareDispatcher prepares and operates the dispatch system
-func PrepareDispatcher(events map[string][]func(*Data)) {
-	dispatcherInstance := &dispatcher{
+func PrepareDispatcher(listeners map[string]func(*Data)) {
+	dispatcherInstance = &dispatcher{
 		make(chan *dispatchData),
-		events,
+		listeners,
 	}
 	dispatcherInstance.run()
 }
@@ -43,9 +43,7 @@ func (d *dispatcher) run() {
 	go func() {
 		for {
 			go func(dat *dispatchData) {
-				for _, listenerFunc := range d.events[dat.event.Name] {
-					listenerFunc(dat.event)
-				}
+				d.listeners[dat.event.Name](dat.event)
 				if dat.waitGroup != nil {
 					dat.waitGroup.Done()
 				}

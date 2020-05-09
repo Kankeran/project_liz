@@ -8,6 +8,7 @@ import (
 	"Liz/elements"
 	"Liz/generators"
 	"Liz/kernel/container"
+	"Liz/kernel/event"
 	"Liz/kernel/services"
 	"Liz/parsers"
 
@@ -26,7 +27,7 @@ func main() {
 	newCmd := flag.NewFlagSet("new", flag.ExitOnError)
 	newName := newCmd.String("name", "App", "type new project name")
 
-	newCmd.Usage = func(){
+	newCmd.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s [new|build] [flags...]\n", os.Args[0])
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nflags for new\n")
@@ -59,16 +60,37 @@ func main() {
 
 	servicesMap, err = parseReferences(servicesMap.(map[interface{}]interface{}), "./config/services.yaml")
 	check(err)
+	listenersMap := servicesMap.(map[interface{}]interface{})["listeners"]
 	servicesMap = servicesMap.(map[interface{}]interface{})["services"]
-	servicesMap = parseServices(servicesMap.(map[interface{}]interface{}))
 
-	var generator = container.Get("service_generator").(*generators.Service)
 	var code = "package services\n // Build building container container\n func Build() {\n\n"
 
-	for serviceName, serviceMap := range servicesMap.(map[interface{}]interface{}) {
-		code += "container.Set(\"" + serviceName.(string) + "\", " + generator.Generate(elements.NewService(serviceMap.(map[interface{}]interface{}))) + ")\n\n"
+	if servicesMap != nil {
+		servicesMap = parseServices(servicesMap.(map[interface{}]interface{}), servicesMap.(map[interface{}]interface{}))
+		var serviceGenerator = container.Get("service_generator").(*generators.Service)
+		for serviceName, serviceMap := range servicesMap.(map[interface{}]interface{}) {
+			code += "container.Set(\"" + serviceName.(string) + "\", " + serviceGenerator.Generate(elements.NewService(serviceMap.(map[interface{}]interface{}))) + ")\n\n"
+		}
 	}
-	code += "}"
+
+	event.DispatchSync("show_info2", nil)
+
+	code += "event.PrepareDispatcher(map[string]func(d *event.Data){"
+
+	if listenersMap != nil {
+		code += "\n"
+		var listenerGenerator = &generators.Listener{}
+		listenersMap = parseServices(listenersMap.(map[interface{}]interface{}), servicesMap.(map[interface{}]interface{}))
+		for eventName, listenerMap := range listenersMap.(map[interface{}]interface{}) {
+			var listeners = make([]*elements.Listener, len(listenerMap.([]interface{})))
+			for key, listenerData := range listenerMap.([]interface{}) {
+				listeners[key] = elements.NewListener(listenerData.(map[interface{}]interface{}))
+			}
+			code += "\"" + eventName.(string) + "\": " + listenerGenerator.Generate(listeners)
+		}
+	}
+
+	code += "})\n\n}"
 
 	var output []byte
 	// println(code)
@@ -76,6 +98,8 @@ func main() {
 	check(err)
 
 	check(writeToFile(output))
+
+	event.DispatchSync("show_info", nil)
 
 	// fill()
 }
@@ -98,11 +122,11 @@ func parseReferences(source map[interface{}]interface{}, filePath string) (inter
 	return container.Get("reference_parser").(*parsers.Reference).Parse(source, filePath)
 }
 
-func parseServices(source map[interface{}]interface{}) map[interface{}]interface{} {
+func parseServices(dst, src map[interface{}]interface{}) map[interface{}]interface{} {
 	serviceParser := container.Get("service_parser").(*parsers.Service)
-	serviceParser.SetOriginalServicesMap(source)
+	serviceParser.SetOriginalServicesMap(src)
 
-	return serviceParser.Parse(source).(map[interface{}]interface{})
+	return serviceParser.Parse(dst).(map[interface{}]interface{})
 }
 
 func writeToFile(data []byte) error {

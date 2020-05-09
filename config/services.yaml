@@ -17,3 +17,17 @@ services:
     constructor: "parsers.NewYamlFileReader"
     arguments:
       - "make(map[string]interface{})"
+
+  test.example_listener:
+    struct: "test.ExampleListener"
+
+  test.my_listener:
+    struct: "test.MyListener"
+
+listeners:
+  show_info:
+    - service: "@test.example_listener"
+      method: "ShowInfo"
+  show_info2:
+    - service: "@test.my_listener"
+      method: "Show"

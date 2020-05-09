@@ -3,7 +3,9 @@ package services
 import (
 	"Liz/generators"
 	"Liz/kernel/container"
+	"Liz/kernel/event"
 	"Liz/parsers"
+	"Liz/test"
 )
 
 // Build building container container
@@ -36,6 +38,27 @@ func Build() {
 		)
 
 		return service
+	})
+
+	container.Set("test.example_listener", func() interface{} {
+		service := &test.ExampleListener{}
+
+		return service
+	})
+
+	container.Set("test.my_listener", func() interface{} {
+		service := &test.MyListener{}
+
+		return service
+	})
+
+	event.PrepareDispatcher(map[string]func(d *event.Data){
+		"show_info2": func(d *event.Data) {
+			container.Get("test.my_listener").(*test.MyListener).Show(d)
+		},
+		"show_info": func(d *event.Data) {
+			container.Get("test.example_listener").(*test.ExampleListener).ShowInfo(d)
+		},
 	})
 
 }
