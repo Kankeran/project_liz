@@ -13,8 +13,16 @@ import (
 // Build building container container
 func Build() {
 
-	container.Set("service_generator", func() interface{} {
-		service := &generators.Service{}
+	container.Set("service_parser", func() interface{} {
+		service := &parsers.Service{}
+
+		return service
+	})
+
+	container.Set("yaml_file_reader", func() interface{} {
+		service := parsers.NewYamlFileReader(
+			make(map[string]interface{}),
+		)
 
 		return service
 	})
@@ -28,17 +36,8 @@ func Build() {
 		return service
 	})
 
-	container.Set("container_file_writer", func() interface{} {
-		service := domain.NewFileWriter(
-			"kernel/container",
-			"container.go",
-		)
-
-		return service
-	})
-
-	container.Set("code_formatter", func() interface{} {
-		service := &domain.CodeFormatter{}
+	container.Set("service_generator", func() interface{} {
+		service := &generators.Service{}
 
 		return service
 	})
@@ -69,6 +68,15 @@ func Build() {
 		return service
 	})
 
+	container.Set("config_yaml_file_writer", func() interface{} {
+		service := domain.NewFileWriter(
+			"config",
+			"services.yaml",
+		)
+
+		return service
+	})
+
 	container.Set("reference_parser", func() interface{} {
 		service := parsers.NewReference(
 			make(map[string]interface{}),
@@ -78,24 +86,10 @@ func Build() {
 		return service
 	})
 
-	container.Set("service_parser", func() interface{} {
-		service := &parsers.Service{}
-
-		return service
-	})
-
-	container.Set("yaml_file_reader", func() interface{} {
-		service := parsers.NewYamlFileReader(
-			make(map[string]interface{}),
-		)
-
-		return service
-	})
-
-	container.Set("config_yaml_file_writer", func() interface{} {
+	container.Set("container_file_writer", func() interface{} {
 		service := domain.NewFileWriter(
-			"config",
-			"services.yaml",
+			"kernel/container",
+			"container.go",
 		)
 
 		return service
@@ -106,6 +100,12 @@ func Build() {
 			"kernel/event",
 			"dispatcher.go",
 		)
+
+		return service
+	})
+
+	container.Set("code_formatter", func() interface{} {
+		service := &domain.CodeFormatter{}
 
 		return service
 	})
