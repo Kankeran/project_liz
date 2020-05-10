@@ -1,6 +1,9 @@
 package builder
 
 import (
+	"fmt"
+	"os/exec"
+
 	"Liz/domain"
 	"github.com/go-git/go-git/v5"
 )
@@ -143,9 +146,20 @@ func NewProjectStarter(
 func (ps *ProjectStarter) Build(projectName string) {
 	var err error
 
-	_, err = git.PlainInit(domain.GetWorkingPath(), false)
+	_, err = git.PlainInit("./", false)
+
+	if err != nil && err != git.ErrRepositoryAlreadyExists {
+		panic(err)
+	}
+
+	cmd := exec.Command("go", "mod", "init", projectName)
+	err = cmd.Start()
 	if err != nil {
 		panic(err)
+	}
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 
 	err = ps.configYamlFileWriter.Write([]byte(configYamlData))
@@ -155,21 +169,10 @@ func (ps *ProjectStarter) Build(projectName string) {
 
 	var output []byte
 
-	output, err = ps.codeFormatter.Format(serviceData)
-	if err != nil {
-		panic(err)
-	}
-
-	err = ps.serviceFileWriter.Write(output)
-	if err != nil {
-		panic(err)
-	}
-
 	output, err = ps.codeFormatter.Format(containerData)
 	if err != nil {
 		panic(err)
 	}
-
 	err = ps.containerFileWriter.Write(output)
 	if err != nil {
 		panic(err)
@@ -179,8 +182,16 @@ func (ps *ProjectStarter) Build(projectName string) {
 	if err != nil {
 		panic(err)
 	}
-
 	err = ps.dispatcherFileWriter.Write(output)
+	if err != nil {
+		panic(err)
+	}
+
+	output, err = ps.codeFormatter.Format(serviceData)
+	if err != nil {
+		panic(err)
+	}
+	err = ps.serviceFileWriter.Write(output)
 	if err != nil {
 		panic(err)
 	}
