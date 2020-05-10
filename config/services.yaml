@@ -21,12 +21,36 @@ services:
     arguments:
       - "make(map[string]interface{})"
 
+  config_yaml_file_writer:
+    struct: "domain.FileWriter"
+    constructor: "domain.NewFileWriter"
+    arguments:
+      - "'config'"
+      - "'services.yaml'"
+
   service_file_writer:
     struct: "domain.FileWriter"
     constructor: "domain.NewFileWriter"
     arguments:
       - "'kernel/services'"
       - "'services.go'"
+
+  container_file_writer:
+    struct: "domain.FileWriter"
+    constructor: "domain.NewFileWriter"
+    arguments:
+      - "'kernel/container'"
+      - "'container.go'"
+
+  dispatcher_file_writer:
+    struct: "domain.FileWriter"
+    constructor: "domain.NewFileWriter"
+    arguments:
+      - "'kernel/event'"
+      - "'dispatcher.go'"
+
+  code_formatter:
+    struct: "domain.CodeFormatter"
 
   container_builder:
     struct: "builder.Container"
@@ -38,6 +62,17 @@ services:
       - "@listener_generator"
       - "@service_generator"
       - "@service_file_writer"
+      - "@code_formatter"
+
+  project_starter_builder:
+    struct: "builder.ProjectStarter"
+    constructor: "builder.NewProjectStarter"
+    arguments:
+      - "@config_yaml_file_writer"
+      - "@service_file_writer"
+      - "@container_file_writer"
+      - "@dispatcher_file_writer"
+      - "@code_formatter"
 
   test.example_listener:
     struct: "test.ExampleListener"

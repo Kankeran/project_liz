@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"Liz/builder"
+	"Liz/domain"
 	"Liz/kernel/container"
 	"Liz/kernel/services"
 )
@@ -19,13 +20,21 @@ func check(e error) {
 func main() {
 	newCmd := flag.NewFlagSet("new", flag.ExitOnError)
 	newName := newCmd.String("name", "App", "type new project name")
+	newPath := newCmd.String("path", "./", "path to new project")
+
+	buildCmd := flag.NewFlagSet("build", flag.ExitOnError)
+	buildPath := buildCmd.String("path", "./", "path to project to build")
 
 	newCmd.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s [new|build] [flags...]\n", os.Args[0])
 		flag.PrintDefaults()
-		fmt.Fprintf(os.Stderr, "\nflags for new\n")
+		fmt.Fprintf(os.Stderr, "\n-----------------------------------------\n\nflags for new\n")
 		newCmd.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\n-----------------------------------------\n\nflags for build\n")
+		buildCmd.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\n-----------------------------------------\n")
 	}
+	buildCmd.Usage = newCmd.Usage
 	flag.Usage = newCmd.Usage
 	flag.Parse()
 
@@ -39,18 +48,17 @@ func main() {
 	switch os.Args[1] {
 	case "new":
 		check(newCmd.Parse(os.Args[2:]))
-		fmt.Println(*newName)
+		domain.SetWorkingPath(*newPath)
+		container.Get("project_starter_builder").(*builder.ProjectStarter).Build(*newName)
 	case "build":
+		check(buildCmd.Parse(os.Args[2:]))
+		domain.SetWorkingPath(*buildPath)
 		container.Get("container_builder").(*builder.Container).Build()
 		break
 	default:
 		flag.Usage()
 		os.Exit(2)
 	}
-}
-
-func newProject() {
-
 }
 
 // func absPath(filename string) (string, error) {

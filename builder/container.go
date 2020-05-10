@@ -6,9 +6,6 @@ import (
 	"Liz/generators"
 	"Liz/kernel/event"
 	"Liz/parsers"
-	"github.com/pkg/errors"
-	"github.com/sqs/goreturns/returns"
-	"golang.org/x/tools/imports"
 )
 
 // Container builder struct
@@ -19,6 +16,7 @@ type Container struct {
 	listenerGenerator *generators.Listener
 	serviceGenerator  *generators.Service
 	fileWriter        *domain.FileWriter
+	codeFormatter     *domain.CodeFormatter
 }
 
 // NewContainerBuilder initialize Container struct
@@ -29,6 +27,7 @@ func NewContainerBuilder(
 	listenerGenerator *generators.Listener,
 	serviceGenerator *generators.Service,
 	fileWriter *domain.FileWriter,
+	codeFormatter *domain.CodeFormatter,
 ) *Container {
 	return &Container{
 		yamlFileReader:    yamlFileReader,
@@ -37,6 +36,7 @@ func NewContainerBuilder(
 		listenerGenerator: listenerGenerator,
 		serviceGenerator:  serviceGenerator,
 		fileWriter:        fileWriter,
+		codeFormatter:     codeFormatter,
 	}
 }
 
@@ -84,7 +84,7 @@ func (c *Container) Build() {
 
 	var output []byte
 	// println(code)
-	output, err = formatCode(code)
+	output, err = c.codeFormatter.Format(code)
 	if err != nil {
 		panic(err)
 	}
@@ -95,18 +95,4 @@ func (c *Container) Build() {
 	}
 
 	event.DispatchSync("show_info", nil)
-}
-
-func formatCode(data string) (output []byte, err error) {
-	output, err = returns.Process("./", "", []byte(data), nil)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	output, err = imports.Process("", output, nil)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return output, nil
 }
