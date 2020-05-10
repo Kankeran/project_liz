@@ -13,7 +13,7 @@ type Listener struct {
 func NewListener(listenerMap map[interface{}]interface{}) *Listener {
 	return &Listener{
 		ServiceGetter: getServiceGetter(listenerMap),
-		Method: getMethod(listenerMap),
+		Method:        getMethod(listenerMap),
 	}
 }
 

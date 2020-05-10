@@ -4,14 +4,17 @@ import (
 	"os"
 )
 
+// FileWriter struct used to write data to specified file
 type FileWriter struct {
 	path, fileName string
 }
 
+// NewFileWriter initialize new file writer
 func NewFileWriter(path string, fileName string) *FileWriter {
 	return &FileWriter{path: path, fileName: fileName}
 }
 
+// Write writes data to specified file
 func (fw *FileWriter) Write(data []byte) error {
 	var (
 		err  error
