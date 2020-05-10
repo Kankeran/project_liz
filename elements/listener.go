@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// Listener element struct
 type Listener struct {
 	ServiceGetter, Method string
 }

@@ -4,8 +4,10 @@ import (
 	"Liz/elements"
 )
 
+// Listener generator struct
 type Listener struct{}
 
+// Generate generates listeners code
 func (l *Listener) Generate(listeners []*elements.Listener) string {
 	var code = "func(d *event.Data) {\n"
 	for _, listener := range listeners {

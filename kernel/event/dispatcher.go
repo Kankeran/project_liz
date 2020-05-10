@@ -15,7 +15,7 @@ type dispatchData struct {
 
 type dispatcher struct {
 	eventChannel chan *dispatchData
-	listeners       map[string]func(*Data)
+	listeners    map[string]func(*Data)
 }
 
 var dispatcherInstance *dispatcher

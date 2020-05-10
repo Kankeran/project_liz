@@ -11,6 +11,7 @@ import (
 	"golang.org/x/tools/imports"
 )
 
+// Container builder struct
 type Container struct {
 	yamlFileReader    *parsers.YamlFileReader
 	referenceParser   *parsers.Reference
@@ -20,6 +21,7 @@ type Container struct {
 	fileWriter        *domain.FileWriter
 }
 
+// NewContainerBuilder initialize Container struct
 func NewContainerBuilder(
 	yamlFileReader *parsers.YamlFileReader,
 	referenceParser *parsers.Reference,
@@ -38,12 +40,17 @@ func NewContainerBuilder(
 	}
 }
 
+// Build builds service and listeners code
 func (c *Container) Build() {
 	servicesMap, err := c.yamlFileReader.Read("./config/services.yaml")
-	if err != nil {panic(err)}
+	if err != nil {
+		panic(err)
+	}
 
 	servicesMap, err = c.referenceParser.Parse(servicesMap.(map[interface{}]interface{}), "./config/services.yaml")
-	if err != nil {panic(err)}
+	if err != nil {
+		panic(err)
+	}
 	listenersMap := servicesMap.(map[interface{}]interface{})["listeners"]
 	servicesMap = servicesMap.(map[interface{}]interface{})["services"]
 
@@ -78,10 +85,14 @@ func (c *Container) Build() {
 	var output []byte
 	// println(code)
 	output, err = formatCode(code)
-	if err != nil {panic(err)}
+	if err != nil {
+		panic(err)
+	}
 
 	err = c.fileWriter.Write(output)
-	if err != nil {panic(err)}
+	if err != nil {
+		panic(err)
+	}
 
 	event.DispatchSync("show_info", nil)
 }
