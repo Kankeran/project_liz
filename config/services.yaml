@@ -2,6 +2,9 @@ services:
   service_generator:
     struct: "generators.Service"
 
+  listener_generator:
+    struct: "generators.Listener"
+
   reference_parser:
     struct: "parsers.Reference"
     constructor: "parsers.NewReference"
@@ -17,6 +20,24 @@ services:
     constructor: "parsers.NewYamlFileReader"
     arguments:
       - "make(map[string]interface{})"
+
+  service_file_writer:
+    struct: "domain.FileWriter"
+    constructor: "domain.NewFileWriter"
+    arguments:
+      - "'kernel/services'"
+      - "'services.go'"
+
+  container_builder:
+    struct: "builder.Container"
+    constructor: "builder.NewContainerBuilder"
+    arguments:
+      - "@yaml_file_reader"
+      - "@reference_parser"
+      - "@service_parser"
+      - "@listener_generator"
+      - "@service_generator"
+      - "@service_file_writer"
 
   test.example_listener:
     struct: "test.ExampleListener"

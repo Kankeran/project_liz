@@ -1,0 +1,101 @@
+package builder
+
+import (
+	"Liz/domain"
+	"Liz/elements"
+	"Liz/generators"
+	"Liz/kernel/event"
+	"Liz/parsers"
+	"github.com/pkg/errors"
+	"github.com/sqs/goreturns/returns"
+	"golang.org/x/tools/imports"
+)
+
+type Container struct {
+	yamlFileReader    *parsers.YamlFileReader
+	referenceParser   *parsers.Reference
+	serviceParser     *parsers.Service
+	listenerGenerator *generators.Listener
+	serviceGenerator  *generators.Service
+	fileWriter        *domain.FileWriter
+}
+
+func NewContainerBuilder(
+	yamlFileReader *parsers.YamlFileReader,
+	referenceParser *parsers.Reference,
+	serviceParser *parsers.Service,
+	listenerGenerator *generators.Listener,
+	serviceGenerator *generators.Service,
+	fileWriter *domain.FileWriter,
+) *Container {
+	return &Container{
+		yamlFileReader:    yamlFileReader,
+		referenceParser:   referenceParser,
+		serviceParser:     serviceParser,
+		listenerGenerator: listenerGenerator,
+		serviceGenerator:  serviceGenerator,
+		fileWriter:        fileWriter,
+	}
+}
+
+func (c *Container) Build() {
+	servicesMap, err := c.yamlFileReader.Read("./config/services.yaml")
+	if err != nil {panic(err)}
+
+	servicesMap, err = c.referenceParser.Parse(servicesMap.(map[interface{}]interface{}), "./config/services.yaml")
+	if err != nil {panic(err)}
+	listenersMap := servicesMap.(map[interface{}]interface{})["listeners"]
+	servicesMap = servicesMap.(map[interface{}]interface{})["services"]
+
+	var code = "package services\n // Build building container container\n func Build() {\n\n"
+
+	if servicesMap != nil {
+		c.serviceParser.SetOriginalServicesMap(servicesMap.(map[interface{}]interface{}))
+		servicesMap = c.serviceParser.Parse(servicesMap.(map[interface{}]interface{}))
+		for serviceName, serviceMap := range servicesMap.(map[interface{}]interface{}) {
+			code += "container.Set(\"" + serviceName.(string) + "\", " + c.serviceGenerator.Generate(elements.NewService(serviceMap.(map[interface{}]interface{}))) + ")\n\n"
+		}
+	}
+
+	event.DispatchSync("show_info2", nil)
+
+	code += "event.PrepareDispatcher(map[string]func(d *event.Data){"
+
+	if listenersMap != nil {
+		code += "\n"
+		listenersMap = c.serviceParser.Parse(listenersMap.(map[interface{}]interface{}))
+		for eventName, listenerMap := range listenersMap.(map[interface{}]interface{}) {
+			var listeners = make([]*elements.Listener, len(listenerMap.([]interface{})))
+			for key, listenerData := range listenerMap.([]interface{}) {
+				listeners[key] = elements.NewListener(listenerData.(map[interface{}]interface{}))
+			}
+			code += "\"" + eventName.(string) + "\": " + c.listenerGenerator.Generate(listeners)
+		}
+	}
+
+	code += "})\n\n}"
+
+	var output []byte
+	// println(code)
+	output, err = formatCode(code)
+	if err != nil {panic(err)}
+
+	err = c.fileWriter.Write(output)
+	if err != nil {panic(err)}
+
+	event.DispatchSync("show_info", nil)
+}
+
+func formatCode(data string) (output []byte, err error) {
+	output, err = returns.Process("./", "", []byte(data), nil)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	output, err = imports.Process("", output, nil)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return output, nil
+}
