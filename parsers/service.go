@@ -58,27 +58,49 @@ func (s *Service) parseMap(services map[interface{}]interface{}) interface{} {
 }
 
 func (s *Service) replaceService(arg string) string {
-	serviceMatcher := regexp.MustCompile("@\\(\\S*\\)")
-	indexes := serviceMatcher.FindAllStringIndex(arg, -1)
+	serviceMatcher := regexp.MustCompile("@\\(\\S+\\)")
 	var replaced string
 	var lastId = 0
-	for _, index := range indexes {
+
+	for _, index := range serviceMatcher.FindAllStringIndex(arg, -1) {
 		replaced += arg[lastId:index[0]]
 		replaced += strings.Replace(strings.Replace(arg[index[0]:index[1]], "@(", "container.Get(\"", 1), ")", "\")", 1)
 		replaced += ".(*" + s.getStructName(strings.TrimRight(strings.TrimLeft(arg[index[0]:index[1]], "@("), ")")) + ")"
 		lastId = index[1]
 	}
+
 	if len(replaced) > 0 {
 		replaced += arg[lastId:]
 		return replaced
 	}
-	serviceMatcher = regexp.MustCompile("@.+")
-	indexes = serviceMatcher.FindAllStringIndex(arg, -1)
-	for _, index := range indexes {
+
+	serviceMatcher = regexp.MustCompile("@\\S+")
+	for _, index := range serviceMatcher.FindAllStringIndex(arg, -1) {
 		replaced = strings.Replace(arg[index[0]:index[1]], "@", "container.Get(\"", 1) + "\")"
 		replaced += ".(*" + s.getStructName(strings.TrimLeft(arg[index[0]:index[1]], "@")) + ")"
+		break
 	}
+
 	if len(replaced) > 0 {
+		return replaced
+	}
+
+	return arg
+}
+
+func (s *Service) replaceEnv(arg string) string {
+	envSettingMatcher := regexp.MustCompile("\\$env\\(\\S+\\)")
+	var replaced string
+	var lastId = 0
+
+	for _, index := range envSettingMatcher.FindAllStringIndex(arg, -1) {
+		replaced += arg[lastId:index[0]]
+		replaced += strings.Replace(strings.Replace(arg[index[0]:index[1]], "$env(", "os.Getenv(\"", 1), ")", "\")", 1)
+		lastId = index[1]
+	}
+
+	if len(replaced) > 0 {
+		replaced += arg[lastId:]
 		return replaced
 	}
 

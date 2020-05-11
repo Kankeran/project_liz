@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"bytes"
 	"fmt"
 	"os/exec"
 
@@ -124,6 +125,10 @@ func (d *dispatcher) dispatchSync(name string, data interface{}) {
 
 const autoLoadData = `package autoload
 
+import (
+	_ "github.com/joho/godotenv/autoload"
+)
+
 func init() {
 	services.Build()
 	event.RunListener()
@@ -132,7 +137,7 @@ func init() {
 const appData = `package main
 
 import (
-	_ "%s/kernel/services"
+	_ "%s/kernel/autoload"
 )
 
 func main() {
@@ -176,13 +181,33 @@ func (ps *ProjectStarter) Build(projectName string) {
 	}
 
 	cmd := exec.Command("go", "mod", "init", projectName)
+	var stdErr bytes.Buffer
+	cmd.Stderr = &stdErr
 	err = cmd.Start()
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+		return
+	}
+	err = cmd.Wait()
+	if err != nil && stdErr.String() != "go mod init: go.mod already exists"{
+		fmt.Println(err.Error())
+		fmt.Println(stdErr.String())
+		return
+	}
+
+	cmd = exec.Command("go", "get", "github.com/joho/godotenv")
+	stdErr.Reset()
+	cmd.Stderr = &stdErr
+	err = cmd.Start()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
 	}
 	err = cmd.Wait()
 	if err != nil {
 		fmt.Println(err.Error())
+		fmt.Println(stdErr.String())
+		return
 	}
 
 	err = ps.configYamlWriter.Write([]byte(configYamlData))

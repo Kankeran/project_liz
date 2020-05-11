@@ -13,8 +13,26 @@ import (
 // Build building container container
 func Build() {
 
-	container.Set("listener_generator", func() interface{} {
-		service := &generators.Listener{}
+	container.Set("service_file_writer", func() interface{} {
+		service := domain.NewFileWriter(
+			"kernel/services",
+			"services.go",
+		)
+
+		return service
+	})
+
+	container.Set("autoload_file_writer", func() interface{} {
+		service := domain.NewFileWriter(
+			"kernel/autoload",
+			"autoload.go",
+		)
+
+		return service
+	})
+
+	container.Set("code_formatter", func() interface{} {
+		service := &domain.CodeFormatter{}
 
 		return service
 	})
@@ -38,29 +56,6 @@ func Build() {
 		return service
 	})
 
-	container.Set("test.my_listener", func() interface{} {
-		service := &test.MyListener{}
-
-		return service
-	})
-
-	container.Set("yaml_file_reader", func() interface{} {
-		service := parsers.NewYamlFileReader(
-			make(map[string]interface{}),
-		)
-
-		return service
-	})
-
-	container.Set("container_file_writer", func() interface{} {
-		service := domain.NewFileWriter(
-			"kernel/container",
-			"container.go",
-		)
-
-		return service
-	})
-
 	container.Set("container_builder", func() interface{} {
 		service := builder.NewContainerBuilder(
 			container.Get("yaml_file_reader").(*parsers.YamlFileReader),
@@ -75,46 +70,9 @@ func Build() {
 		return service
 	})
 
-	container.Set("service_generator", func() interface{} {
-		service := &generators.Service{}
-
-		return service
-	})
-
-	container.Set("reference_parser", func() interface{} {
-		service := parsers.NewReference(
+	container.Set("yaml_file_reader", func() interface{} {
+		service := parsers.NewYamlFileReader(
 			make(map[string]interface{}),
-			container.Get("yaml_file_reader").(*parsers.YamlFileReader),
-		)
-
-		return service
-	})
-
-	container.Set("config_yaml_file_writer", func() interface{} {
-		service := domain.NewFileWriter(
-			"config",
-			"services.yaml",
-		)
-
-		return service
-	})
-
-	container.Set("code_formatter", func() interface{} {
-		service := &domain.CodeFormatter{}
-
-		return service
-	})
-
-	container.Set("service_parser", func() interface{} {
-		service := &parsers.Service{}
-
-		return service
-	})
-
-	container.Set("service_file_writer", func() interface{} {
-		service := domain.NewFileWriter(
-			"kernel/services",
-			"services.go",
 		)
 
 		return service
@@ -129,21 +87,63 @@ func Build() {
 		return service
 	})
 
-	container.Set("autoload_file_writer", func() interface{} {
-		service := domain.NewFileWriter(
-			"kernel/autoload",
-			"autoload.go",
+	container.Set("test.my_listener", func() interface{} {
+		service := &test.MyListener{}
+
+		return service
+	})
+
+	container.Set("service_generator", func() interface{} {
+		service := &generators.Service{}
+
+		return service
+	})
+
+	container.Set("listener_generator", func() interface{} {
+		service := &generators.Listener{}
+
+		return service
+	})
+
+	container.Set("reference_parser", func() interface{} {
+		service := parsers.NewReference(
+			make(map[string]interface{}),
+			container.Get("yaml_file_reader").(*parsers.YamlFileReader),
 		)
 
 		return service
 	})
 
-	event.Add("show_info2", func(d *event.Data) {
-		container.Get("test.my_listener").(*test.MyListener).Show(d)
+	container.Set("service_parser", func() interface{} {
+		service := &parsers.Service{}
+
+		return service
+	})
+
+	container.Set("config_yaml_file_writer", func() interface{} {
+		service := domain.NewFileWriter(
+			"config",
+			"services.yaml",
+		)
+
+		return service
+	})
+
+	container.Set("container_file_writer", func() interface{} {
+		service := domain.NewFileWriter(
+			"kernel/container",
+			"container.go",
+		)
+
+		return service
 	})
 
 	event.Add("show_info", func(d *event.Data) {
 		container.Get("test.example_listener").(*test.ExampleListener).ShowInfo(d)
+	})
+
+	event.Add("show_info2", func(d *event.Data) {
+		container.Get("test.my_listener").(*test.MyListener).Show(d)
 	})
 
 }
