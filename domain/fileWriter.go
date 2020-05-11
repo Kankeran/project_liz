@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"io/ioutil"
 	"os"
 )
 
@@ -16,25 +17,16 @@ func NewFileWriter(path string, fileName string) *FileWriter {
 
 // Write writes data to specified file
 func (fw *FileWriter) Write(data []byte) error {
-	var (
-		err  error
-		file *os.File
-	)
+	var err error
 
 	if _, err = os.Stat(fw.path); os.IsNotExist(err) {
-		err = os.MkdirAll(fw.path, os.ModePerm)
+		err = os.MkdirAll(fw.path, 0775)
 		if err != nil {
 			return err
 		}
 	}
 
-	file, err = os.Create(fw.path + "/" + fw.fileName)
-	if err != nil {
-		return err
-	}
-
-	_, err = file.Write(data)
-
+	err = ioutil.WriteFile(fw.path+"/"+fw.fileName, data, 0775)
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,7 @@ import (
 )
 
 const configYamlData = "services:\nlisteners:"
-const serviceData = "package services\n // Build building container container\n func Build() {\n\nevent.PrepareDispatcher(map[string]func(d *event.Data){})\n\n}"
+const serviceData = "package services\n // Build building container container\n func Build() {\n\n}"
 const containerData = `package container
 
 type containerStruct struct {
@@ -66,7 +66,10 @@ type dispatcher struct {
 	listeners    map[string]func(*Data)
 }
 
-var dispatcherInstance *dispatcher
+var dispatcherInstance = &dispatcher{
+make(chan *dispatchData),
+make(map[string]func(*Data)),
+}
 
 // Dispatch asynchronously call event by name
 func Dispatch(name string, data interface{}) {
@@ -78,13 +81,18 @@ func DispatchSync(name string, data interface{}) {
 	dispatcherInstance.dispatchSync(name, data)
 }
 
-// PrepareDispatcher prepares and operates the dispatch system
-func PrepareDispatcher(listeners map[string]func(*Data)) {
-	dispatcherInstance = &dispatcher{
-		make(chan *dispatchData),
-		listeners,
-	}
+// RunListener start listening of event call
+func RunListener() {
 	dispatcherInstance.run()
+}
+
+// Add event listener to dispatcher
+func Add(eventName string, listener func(*Data)) {
+	dispatcherInstance.add(eventName, listener)
+}
+
+func (d *dispatcher)add(eventName string, listener func(*Data)) {
+	d.listeners[eventName] = listener
 }
 
 func (d *dispatcher) run() {
@@ -101,10 +109,12 @@ func (d *dispatcher) run() {
 }
 
 func (d *dispatcher) dispatch(name string, data interface{}) {
+	if _, ok := d.listeners[name]; !ok {return}
 	d.eventChannel <- &dispatchData{&Data{name, data}, nil}
 }
 
 func (d *dispatcher) dispatchSync(name string, data interface{}) {
+	if _, ok := d.listeners[name]; !ok {return}
 	waitGroup := new(sync.WaitGroup)
 	waitGroup.Add(1)
 	d.eventChannel <- &dispatchData{&Data{name, data}, waitGroup}
@@ -112,33 +122,46 @@ func (d *dispatcher) dispatchSync(name string, data interface{}) {
 }
 `
 
+const autoLoadData = `package autoload
+
+func init() {
+	services.Build()
+	event.RunListener()
+}`
+
 const appData = `package main
 
+import (
+	_ "%s/kernel/services"
+)
+
 func main() {
-	services.Build()
+	//write your code here :)
 }
 `
 
 // ProjectStarter used to generate common files
 type ProjectStarter struct {
-	configYamlFileWriter, serviceFileWriter, containerFileWriter, dispatcherFileWriter *domain.FileWriter
+	configYamlWriter, serviceWriter, containerWriter, dispatcherWriter, autoLoadWriter *domain.FileWriter
 	codeFormatter                                                                      *domain.CodeFormatter
 }
 
 // NewProjectStarter initialize new ProjectStarter
 func NewProjectStarter(
-	configYamlFileWriter *domain.FileWriter,
-	serviceFileWriter *domain.FileWriter,
-	containerFileWriter *domain.FileWriter,
-	dispatcherFileWriter *domain.FileWriter,
+	configYamlWriter *domain.FileWriter,
+	serviceWriter *domain.FileWriter,
+	containerWriter *domain.FileWriter,
+	dispatcherWriter *domain.FileWriter,
+	autoLoadWriter *domain.FileWriter,
 	codeFormatter *domain.CodeFormatter,
 ) *ProjectStarter {
 	return &ProjectStarter{
-		configYamlFileWriter: configYamlFileWriter,
-		serviceFileWriter:    serviceFileWriter,
-		containerFileWriter:  containerFileWriter,
-		dispatcherFileWriter: dispatcherFileWriter,
-		codeFormatter:        codeFormatter,
+		configYamlWriter: configYamlWriter,
+		serviceWriter:    serviceWriter,
+		containerWriter:  containerWriter,
+		dispatcherWriter: dispatcherWriter,
+		autoLoadWriter:   autoLoadWriter,
+		codeFormatter:    codeFormatter,
 	}
 }
 
@@ -162,7 +185,7 @@ func (ps *ProjectStarter) Build(projectName string) {
 		fmt.Println(err.Error())
 	}
 
-	err = ps.configYamlFileWriter.Write([]byte(configYamlData))
+	err = ps.configYamlWriter.Write([]byte(configYamlData))
 	if err != nil {
 		panic(err)
 	}
@@ -173,7 +196,7 @@ func (ps *ProjectStarter) Build(projectName string) {
 	if err != nil {
 		panic(err)
 	}
-	err = ps.containerFileWriter.Write(output)
+	err = ps.containerWriter.Write(output)
 	if err != nil {
 		panic(err)
 	}
@@ -182,7 +205,7 @@ func (ps *ProjectStarter) Build(projectName string) {
 	if err != nil {
 		panic(err)
 	}
-	err = ps.dispatcherFileWriter.Write(output)
+	err = ps.dispatcherWriter.Write(output)
 	if err != nil {
 		panic(err)
 	}
@@ -191,14 +214,23 @@ func (ps *ProjectStarter) Build(projectName string) {
 	if err != nil {
 		panic(err)
 	}
-	err = ps.serviceFileWriter.Write(output)
+	err = ps.serviceWriter.Write(output)
+	if err != nil {
+		panic(err)
+	}
+
+	output, err = ps.codeFormatter.Format(autoLoadData)
+	if err != nil {
+		panic(err)
+	}
+	err = ps.autoLoadWriter.Write(output)
 	if err != nil {
 		panic(err)
 	}
 
 	appWriter := domain.NewFileWriter(".", projectName+".go")
 
-	output, err = ps.codeFormatter.Format(appData)
+	output, err = ps.codeFormatter.Format(fmt.Sprintf(appData, projectName))
 	if err != nil {
 		panic(err)
 	}

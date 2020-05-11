@@ -13,6 +13,6 @@ func (l *Listener) Generate(listeners []*elements.Listener) string {
 	for _, listener := range listeners {
 		code += listener.ServiceGetter + "." + listener.Method + "(d)\n"
 	}
-	code += "},\n"
+	code += "}"
 	return code
 }

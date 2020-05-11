@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"Liz/builder"
+	_ "Liz/kernel/autoload"
 	"Liz/kernel/container"
-	"Liz/kernel/services"
 )
 
 func check(e error) {
@@ -41,8 +41,6 @@ func main() {
 		flag.Usage()
 		os.Exit(2)
 	}
-
-	services.Build()
 
 	switch os.Args[1] {
 	case "new":

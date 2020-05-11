@@ -4,7 +4,6 @@ import (
 	"Liz/domain"
 	"Liz/elements"
 	"Liz/generators"
-	"Liz/kernel/event"
 	"Liz/parsers"
 )
 
@@ -64,23 +63,18 @@ func (c *Container) Build() {
 		}
 	}
 
-	event.DispatchSync("show_info2", nil)
-
-	code += "event.PrepareDispatcher(map[string]func(d *event.Data){"
-
 	if listenersMap != nil {
-		code += "\n"
 		listenersMap = c.serviceParser.Parse(listenersMap.(map[interface{}]interface{}))
 		for eventName, listenerMap := range listenersMap.(map[interface{}]interface{}) {
 			var listeners = make([]*elements.Listener, len(listenerMap.([]interface{})))
 			for key, listenerData := range listenerMap.([]interface{}) {
 				listeners[key] = elements.NewListener(listenerData.(map[interface{}]interface{}))
 			}
-			code += "\"" + eventName.(string) + "\": " + c.listenerGenerator.Generate(listeners)
+			code += "event.Add(\"" + eventName.(string) + "\", " + c.listenerGenerator.Generate(listeners) + ")\n\n"
 		}
 	}
 
-	code += "})\n\n}"
+	code += "}"
 
 	var output []byte
 	// println(code)
@@ -93,6 +87,4 @@ func (c *Container) Build() {
 	if err != nil {
 		panic(err)
 	}
-
-	event.DispatchSync("show_info", nil)
 }

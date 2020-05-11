@@ -49,6 +49,13 @@ services:
       - "'kernel/event'"
       - "'dispatcher.go'"
 
+  autoload_file_writer:
+    struct: "domain.FileWriter"
+    constructor: "domain.NewFileWriter"
+    arguments:
+      - "'kernel/autoload'"
+      - "'autoload.go'"
+
   code_formatter:
     struct: "domain.CodeFormatter"
 
@@ -72,8 +79,8 @@ services:
       - "@service_file_writer"
       - "@container_file_writer"
       - "@dispatcher_file_writer"
+      - "@autoload_file_writer"
       - "@code_formatter"
-
   test.example_listener:
     struct: "test.ExampleListener"
 
