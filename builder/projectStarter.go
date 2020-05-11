@@ -189,7 +189,7 @@ func (ps *ProjectStarter) Build(projectName string) {
 		return
 	}
 	err = cmd.Wait()
-	if err != nil && stdErr.String() != "go mod init: go.mod already exists"{
+	if err != nil && stdErr.String() != "go mod init: go.mod already exists\n"{
 		fmt.Println(err.Error())
 		fmt.Println(stdErr.String())
 		return
