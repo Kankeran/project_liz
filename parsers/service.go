@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"os"
 	"regexp"
 	"strings"
 )
@@ -31,7 +32,7 @@ func (s *Service) parseInterface(services []interface{}) interface{} {
 	for key, value := range services {
 		switch v := value.(type) {
 		case string:
-			services[key] = s.replaceConjunction(s.replaceSelfReference(s.replaceService(v)))
+			services[key] = s.replaceConjunction(s.replaceSelfReference(s.replaceService(s.replaceEnv(v))))
 		case map[interface{}]interface{}:
 			services[key] = s.parseMap(v)
 		case []interface{}:
@@ -43,10 +44,22 @@ func (s *Service) parseInterface(services []interface{}) interface{} {
 }
 
 func (s *Service) parseMap(services map[interface{}]interface{}) interface{} {
+	for key := range services {
+		switch k := key.(type) {
+		case string:
+			oldKey := key
+			key = s.replaceConjunction(s.replaceEnv(k))
+			if oldKey != key {
+				services[key] = services[oldKey]
+				delete(services, oldKey)
+			}
+		}
+	}
+
 	for key, value := range services {
 		switch v := value.(type) {
 		case string:
-			services[key] = s.replaceConjunction(s.replaceSelfReference(s.replaceService(v)))
+			services[key] = s.replaceConjunction(s.replaceSelfReference(s.replaceService(s.replaceEnv(v))))
 		case map[interface{}]interface{}:
 			services[key] = s.parseMap(v)
 		case []interface{}:
@@ -95,7 +108,7 @@ func (s *Service) replaceEnv(arg string) string {
 
 	for _, index := range envSettingMatcher.FindAllStringIndex(arg, -1) {
 		replaced += arg[lastId:index[0]]
-		replaced += strings.Replace(strings.Replace(arg[index[0]:index[1]], "$env(", "os.Getenv(\"", 1), ")", "\")", 1)
+		replaced += os.Getenv(strings.Replace(strings.Replace(arg[index[0]:index[1]], "$env(", "", 1), ")", "", 1))
 		lastId = index[1]
 	}
 
