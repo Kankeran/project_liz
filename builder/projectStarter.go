@@ -125,10 +125,6 @@ func (d *dispatcher) dispatchSync(name string, data interface{}) {
 
 const autoLoadData = `package autoload
 
-import (
-	_ "github.com/joho/godotenv/autoload"
-)
-
 func init() {
 	services.Build()
 	event.RunListener()
@@ -190,21 +186,6 @@ func (ps *ProjectStarter) Build(projectName string) {
 	}
 	err = cmd.Wait()
 	if err != nil && stdErr.String() != "go mod init: go.mod already exists\n"{
-		fmt.Println(err.Error())
-		fmt.Println(stdErr.String())
-		return
-	}
-
-	cmd = exec.Command("go", "get", "github.com/joho/godotenv")
-	stdErr.Reset()
-	cmd.Stderr = &stdErr
-	err = cmd.Start()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	err = cmd.Wait()
-	if err != nil {
 		fmt.Println(err.Error())
 		fmt.Println(stdErr.String())
 		return

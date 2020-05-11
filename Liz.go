@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	_ "github.com/joho/godotenv/autoload"
+
 	"Liz/builder"
 	_ "Liz/kernel/autoload"
 	"Liz/kernel/container"
