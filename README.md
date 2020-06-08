@@ -60,3 +60,5 @@ additional functionality in services:
 ```$env(env_variable)``` - insert specified value by name from env file
 
 ```{@(serwis), $this}.function(...)``` - calling function od specified service
+
+```$ref: "file_name#object_name"``` - used to include objects from another yaml files 
