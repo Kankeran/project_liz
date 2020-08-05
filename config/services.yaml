@@ -63,7 +63,6 @@ services:
     struct: "builder.Container"
     constructor: "builder.NewContainerBuilder"
     arguments:
-      - "@yaml_file_reader"
       - "@reference_parser"
       - "@service_parser"
       - "@listener_generator"
