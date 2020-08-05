@@ -16,6 +16,15 @@ func NewReference(mapping map[string]interface{}, reader *YamlFileReader) *Refer
 	return &Reference{mapping, reader}
 }
 
+func (r *Reference) ParseFile(filePath string) (interface{}, error) {
+	sourceMap, err := r.reader.Read(filePath)
+	if err != nil {
+		panic(err)
+	}
+
+	return r.Parse(sourceMap.(map[interface{}]interface{}), filePath)
+}
+
 // Parse parses all references to one source
 func (r *Reference) Parse(source map[interface{}]interface{}, filePath string) (interface{}, error) {
 	data, err := r.prepareYaml(source, filePath)

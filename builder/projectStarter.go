@@ -3,6 +3,7 @@ package builder
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 
 	"Liz/domain"
@@ -167,8 +168,14 @@ func NewProjectStarter(
 }
 
 // Build generates project common files
-func (ps *ProjectStarter) Build(projectName string) {
+func (ps *ProjectStarter) Build(projectName string, path string) {
 	var err error
+
+	makeDir(path)
+	err = os.Chdir(path)
+	if err != nil {
+		panic(err)
+	}
 
 	_, err = git.PlainInit("./", false)
 

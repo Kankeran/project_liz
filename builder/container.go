@@ -1,6 +1,8 @@
 package builder
 
 import (
+	"os"
+
 	"Liz/domain"
 	"Liz/elements"
 	"Liz/generators"
@@ -9,7 +11,6 @@ import (
 
 // Container builder struct
 type Container struct {
-	yamlFileReader    *parsers.YamlFileReader
 	referenceParser   *parsers.Reference
 	serviceParser     *parsers.Service
 	listenerGenerator *generators.Listener
@@ -20,7 +21,6 @@ type Container struct {
 
 // NewContainerBuilder initialize Container struct
 func NewContainerBuilder(
-	yamlFileReader *parsers.YamlFileReader,
 	referenceParser *parsers.Reference,
 	serviceParser *parsers.Service,
 	listenerGenerator *generators.Listener,
@@ -29,7 +29,6 @@ func NewContainerBuilder(
 	codeFormatter *domain.CodeFormatter,
 ) *Container {
 	return &Container{
-		yamlFileReader:    yamlFileReader,
 		referenceParser:   referenceParser,
 		serviceParser:     serviceParser,
 		listenerGenerator: listenerGenerator,
@@ -40,13 +39,14 @@ func NewContainerBuilder(
 }
 
 // Build builds service and listeners code
-func (c *Container) Build() {
-	servicesMap, err := c.yamlFileReader.Read("./config/services.yaml")
+func (c *Container) Build(path string) {
+	makeDir(path)
+	err := os.Chdir(path)
 	if err != nil {
 		panic(err)
 	}
 
-	servicesMap, err = c.referenceParser.Parse(servicesMap.(map[interface{}]interface{}), "./config/services.yaml")
+	servicesMap, err := c.referenceParser.ParseFile("./config/services.yaml")
 	if err != nil {
 		panic(err)
 	}
@@ -86,5 +86,14 @@ func (c *Container) Build() {
 	err = c.fileWriter.Write(output)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func makeDir(path string) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err = os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
