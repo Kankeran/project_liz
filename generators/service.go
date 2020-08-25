@@ -14,19 +14,17 @@ func (s *Service) Generate(service *elements.Service) string {
 	var code = "func() interface{}{\n"
 	if len(service.Constructor) != 0 {
 		code += "service := " + service.Constructor + "("
-		code += s.addArguments(service)
+		code += s.addArguments(service.Arguments)
 		code += ")\n"
 	} else {
 		code += "service := &" + service.StructName + "{"
-		code += s.addArguments(service)
+		code += s.addArguments(service.Arguments)
 		code += "}\n"
 	}
 
 	for _, val := range service.Calls {
 		code += "service." + val.Method + "("
-		for _, argument := range val.Arguments {
-			code += argument.(string)
-		}
+		code += s.addArguments(val.Arguments)
 		code += ")\n"
 	}
 	code += "\nreturn " + fmt.Sprint(service.Returns) + "\n}"
@@ -34,11 +32,11 @@ func (s *Service) Generate(service *elements.Service) string {
 	return code
 }
 
-func (s *Service) addArguments(service *elements.Service) (code string) {
-	if len(service.Arguments) > 0 {
+func (s *Service) addArguments(arguments []interface{}) (code string) {
+	if len(arguments) > 0 {
 		code += "\n"
 	}
-	for _, val := range service.Arguments {
+	for _, val := range arguments {
 		code += fmt.Sprint(val) + ",\n"
 	}
 
