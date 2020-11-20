@@ -1,45 +1,66 @@
-package parsers
+package domain
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
-// Reference is tool to include all references to one source
-type Reference struct {
-	referencesFiles map[string]interface{}
-	reader          *YamlFileReader
+// YamlReader used to read yaml files and cache them
+type YamlReader struct {
+	sourceFiles map[string]interface{}
 }
 
-// NewReference create new reference parser
-func NewReference(mapping map[string]interface{}, reader *YamlFileReader) *Reference {
-	return &Reference{mapping, reader}
+// NewYamlReader creates new yaml reader
+func NewYamlReader(mapping map[string]interface{}) *YamlReader {
+	return &YamlReader{mapping}
 }
 
-func (r *Reference) ParseFile(filePath string) (interface{}, error) {
-	sourceMap, err := r.reader.Read(filePath)
+// Read reads new yaml file or getting file data from cache
+func (y *YamlReader) Read(fileName string) interface{} {
+	unmarshalledData, ok := y.sourceFiles[fileName]
+	if ok {
+		return unmarshalledData
+	}
+
+	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		panic(err)
 	}
 
-	return r.Parse(sourceMap.(map[interface{}]interface{}), filePath)
+	err = yaml.Unmarshal(data, &unmarshalledData)
+	y.sourceFiles[fileName] = unmarshalledData
+
+	if err != nil {
+		panic(err)
+	}
+
+	return unmarshalledData
+}
+
+func (y *YamlReader) ParseFile(filePath string) (interface{}, error) {
+	sourceMap := y.Read(filePath)
+
+	return y.Parse(sourceMap.(map[interface{}]interface{}), filePath)
 }
 
 // Parse parses all references to one source
-func (r *Reference) Parse(source map[interface{}]interface{}, filePath string) (interface{}, error) {
-	data, err := r.prepareYaml(source, filePath)
+func (y *YamlReader) Parse(source map[interface{}]interface{}, filePath string) (interface{}, error) {
+	data, err := y.prepareYaml(source, filePath)
 	if err != nil {
 		return nil, err
 	}
 	source = data.(map[interface{}]interface{})
 	for serviceName, serviceData := range source {
-		source[serviceName], err = r.prepareYaml(serviceData, filePath)
+		source[serviceName], err = y.prepareYaml(serviceData, filePath)
 		if err != nil {
 			return nil, err
 		}
 		serviceData, ok := source[serviceName].(map[interface{}]interface{})
 		if ok {
-			source[serviceName], err = r.Parse(serviceData, filePath)
+			source[serviceName], err = y.Parse(serviceData, filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -49,12 +70,12 @@ func (r *Reference) Parse(source map[interface{}]interface{}, filePath string) (
 	return source, nil
 }
 
-func (r *Reference) prepareYaml(source interface{}, filePath string) (interface{}, error) {
+func (y *YamlReader) prepareYaml(source interface{}, filePath string) (interface{}, error) {
 	var err error
 	switch typedValue := source.(type) {
 	case map[interface{}]interface{}:
 		if ref, ok := typedValue["$ref"]; ok {
-			source, err = r.readReferences(ref, source, filePath)
+			source, err = y.readReferences(ref, source, filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -69,13 +90,13 @@ func (r *Reference) prepareYaml(source interface{}, filePath string) (interface{
 	return source, nil
 }
 
-func (r *Reference) readReferences(reference interface{}, destination interface{}, filePath string) (interface{}, error) {
+func (y *YamlReader) readReferences(reference interface{}, destination interface{}, filePath string) (interface{}, error) {
 	var err error
 	switch typedValue := reference.(type) {
 	case []interface{}:
 		for _, ref := range typedValue {
 			if refPath, ok := ref.(string); ok {
-				destination, err = r.readReference(refPath, destination, filePath)
+				destination, err = y.readReference(refPath, destination, filePath)
 				if err != nil {
 					return nil, err
 				}
@@ -84,7 +105,7 @@ func (r *Reference) readReferences(reference interface{}, destination interface{
 			return nil, fmt.Errorf("bad type reference '%v', must be string with format: 'file_path#path_to_element'", reference)
 		}
 	case string:
-		destination, err = r.readReference(typedValue, destination, filePath)
+		destination, err = y.readReference(typedValue, destination, filePath)
 		if err != nil {
 			return nil, err
 		}
@@ -95,13 +116,13 @@ func (r *Reference) readReferences(reference interface{}, destination interface{
 	return destination, nil
 }
 
-func (r *Reference) readReference(reference string, currentFile interface{}, filePath string) (interface{}, error) {
-	externalFilePath, elementName := r.prepareReferencePath(reference)
+func (y *YamlReader) readReference(reference string, currentFile interface{}, filePath string) (interface{}, error) {
+	externalFilePath, elementName := y.prepareReferencePath(reference)
 	if len(externalFilePath) == 0 {
 		externalFilePath = filePath
 	}
 
-	refData, err := r.getExternalFileData(externalFilePath)
+	refData, err := y.getExternalFileData(externalFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +132,7 @@ func (r *Reference) readReference(reference string, currentFile interface{}, fil
 		if !ok {
 			return nil, fmt.Errorf("referenced source is not an object")
 		}
-		refData, err = r.getData(mapedRefData, elementName)
+		refData, err = y.getData(mapedRefData, elementName)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +142,7 @@ func (r *Reference) readReference(reference string, currentFile interface{}, fil
 	case map[interface{}]interface{}:
 		switch refData.(type) {
 		case map[interface{}]interface{}:
-			r.mergeMaps(refData.(map[interface{}]interface{}), currentFile.(map[interface{}]interface{}))
+			y.mergeMaps(refData.(map[interface{}]interface{}), currentFile.(map[interface{}]interface{}))
 		default:
 			if len(currentFile.(map[interface{}]interface{})) > 1 {
 				return nil, fmt.Errorf("cannot merge object with non object element")
@@ -135,34 +156,31 @@ func (r *Reference) readReference(reference string, currentFile interface{}, fil
 	return currentFile, nil
 }
 
-func (r *Reference) mergeMaps(source map[interface{}]interface{}, destination map[interface{}]interface{}) {
+func (y *YamlReader) mergeMaps(source map[interface{}]interface{}, destination map[interface{}]interface{}) {
 	for key, value := range source {
 		destination[key] = value
 	}
 }
 
-func (r *Reference) getExternalFileData(filePath string) (interface{}, error) {
-	refData, ok := r.referencesFiles[filePath]
+func (y *YamlReader) getExternalFileData(filePath string) (interface{}, error) {
+	refData, ok := y.sourceFiles[filePath]
 	if !ok {
 		var err error
-		refData, err = r.reader.Read(filePath)
-		if err != nil {
-			return nil, err
-		}
-		r.referencesFiles[filePath] = refData
+		refData = y.Read(filePath)
+		y.sourceFiles[filePath] = refData
 		if _, ok := refData.(map[interface{}]interface{}); ok {
-			refData, err = r.Parse(r.referencesFiles[filePath].(map[interface{}]interface{}), filePath)
+			refData, err = y.Parse(y.sourceFiles[filePath].(map[interface{}]interface{}), filePath)
 			if err != nil {
 				return nil, err
 			}
-			r.referencesFiles[filePath] = refData
+			y.sourceFiles[filePath] = refData
 		}
 	}
 
 	return refData, nil
 }
 
-func (r *Reference) prepareReferencePath(refPath string) (filePath string, elementName string) {
+func (y *YamlReader) prepareReferencePath(refPath string) (filePath string, elementName string) {
 	data := strings.Split(refPath, "#")
 	filePath = data[0]
 	if len(data) > 1 {
@@ -182,7 +200,7 @@ func (r *Reference) prepareReferencePath(refPath string) (filePath string, eleme
 	return filePath, elementName
 }
 
-func (r *Reference) getData(source map[interface{}]interface{}, path string) (interface{}, error) {
+func (y *YamlReader) getData(source map[interface{}]interface{}, path string) (interface{}, error) {
 	var searchedElement interface{} = source
 	for _, elementName := range strings.Split(path, "/") {
 

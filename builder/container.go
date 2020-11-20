@@ -11,7 +11,7 @@ import (
 
 // Container builder struct
 type Container struct {
-	referenceParser   *parsers.Reference
+	yamlReader   *domain.YamlReader
 	serviceParser     *parsers.Service
 	listenerGenerator *generators.Listener
 	serviceGenerator  *generators.Service
@@ -21,7 +21,7 @@ type Container struct {
 
 // NewContainerBuilder initialize Container struct
 func NewContainerBuilder(
-	referenceParser *parsers.Reference,
+	yamlReader *domain.YamlReader,
 	serviceParser *parsers.Service,
 	listenerGenerator *generators.Listener,
 	serviceGenerator *generators.Service,
@@ -29,7 +29,7 @@ func NewContainerBuilder(
 	codeFormatter *domain.CodeFormatter,
 ) *Container {
 	return &Container{
-		referenceParser:   referenceParser,
+		yamlReader:   yamlReader,
 		serviceParser:     serviceParser,
 		listenerGenerator: listenerGenerator,
 		serviceGenerator:  serviceGenerator,
@@ -46,7 +46,7 @@ func (c *Container) Build(path string) {
 		panic(err)
 	}
 
-	servicesMap, err := c.referenceParser.ParseFile("./config/services.yaml")
+	servicesMap, err := c.yamlReader.ParseFile("./config/services.yaml")
 	if err != nil {
 		panic(err)
 	}

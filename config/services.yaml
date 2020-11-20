@@ -5,19 +5,12 @@ services:
   listener_generator:
     struct: "generators.Listener"
 
-  reference_parser:
-    struct: "parsers.Reference"
-    constructor: "parsers.NewReference"
-    arguments:
-      - "make(map[string]interface{})"
-      - "@yaml_file_reader"
-
   service_parser:
     struct: "parsers.Service"
 
-  yaml_file_reader:
-    struct: "parsers.YamlFileReader"
-    constructor: "parsers.NewYamlFileReader"
+  yaml_reader:
+    struct: "domain.YamlReader"
+    constructor: "domain.NewYamlReader"
     arguments:
       - "make(map[string]interface{})"
 
@@ -63,7 +56,7 @@ services:
     struct: "builder.Container"
     constructor: "builder.NewContainerBuilder"
     arguments:
-      - "@reference_parser"
+      - "@yaml_reader"
       - "@service_parser"
       - "@listener_generator"
       - "@service_generator"
