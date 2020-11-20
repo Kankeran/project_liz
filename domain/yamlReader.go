@@ -43,6 +43,10 @@ func (y *YamlReader) Read(fileName string) interface{} {
 func (y *YamlReader) ParseFile(filePath string) (interface{}, error) {
 	sourceMap := y.Read(filePath)
 
+	if sourceMap == nil {
+		return sourceMap, nil
+	}
+
 	return y.Parse(sourceMap.(map[interface{}]interface{}), filePath)
 }
 

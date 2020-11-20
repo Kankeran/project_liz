@@ -53,11 +53,6 @@ func (c *Container) Build(path string) {
         panic(err)
     }
 
-    listenersMap, err = c.yamlReader.ParseFile("./config/listeners.yaml")
-    if err != nil {
-        panic(err)
-    }
-
     var code = "package services\n // Build building container container\n func Build() {\n\n"
 
     if servicesMap != nil {
@@ -65,6 +60,13 @@ func (c *Container) Build(path string) {
         servicesMap = c.serviceParser.Parse(servicesMap.(map[interface{}]interface{}))
         for serviceName, serviceMap := range servicesMap.(map[interface{}]interface{}) {
             code += "container.Set(\"" + serviceName.(string) + "\", " + c.serviceGenerator.Generate(elements.NewService(serviceMap.(map[interface{}]interface{}))) + ")\n\n"
+        }
+    }
+
+    if _, err := os.Stat("./config/listeners.yaml"); !os.IsNotExist(err) {
+        listenersMap, err = c.yamlReader.ParseFile("./config/listeners.yaml")
+        if err != nil {
+            panic(err)
         }
     }
 
