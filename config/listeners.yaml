@@ -1,3 +1,7 @@
-name: "asd"
-amount: 10
-real: 11.1
+show_info:
+  - service: "@test.example_listener"
+    method: "ShowInfo"
+
+show_info2:
+  - service: "@test.my_listener"
+    method: "Show"

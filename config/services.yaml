@@ -1,88 +1,79 @@
-services:
-  service_generator:
-    struct: "generators.Service"
+service_generator:
+  struct: "generators.Service"
 
-  listener_generator:
-    struct: "generators.Listener"
+listener_generator:
+  struct: "generators.Listener"
 
-  service_parser:
-    struct: "parsers.Service"
+service_parser:
+  struct: "parsers.Service"
 
-  yaml_reader:
-    struct: "domain.YamlReader"
-    constructor: "domain.NewYamlReader"
-    arguments:
-      - "make(map[string]interface{})"
+yaml_reader:
+  struct: "domain.YamlReader"
+  constructor: "domain.NewYamlReader"
+  arguments:
+    - "make(map[string]interface{})"
 
-  config_yaml_file_writer:
-    struct: "domain.FileWriter"
-    constructor: "domain.NewFileWriter"
-    arguments:
-      - "'config'"
-      - "'services.yaml'"
+config_yaml_file_writer:
+  struct: "domain.FileWriter"
+  constructor: "domain.NewFileWriter"
+  arguments:
+    - "'config'"
+    - "'services.yaml'"
 
-  service_file_writer:
-    struct: "domain.FileWriter"
-    constructor: "domain.NewFileWriter"
-    arguments:
-      - "'kernel/services'"
-      - "'services.go'"
+service_file_writer:
+  struct: "domain.FileWriter"
+  constructor: "domain.NewFileWriter"
+  arguments:
+    - "'kernel/services'"
+    - "'services.go'"
 
-  container_file_writer:
-    struct: "domain.FileWriter"
-    constructor: "domain.NewFileWriter"
-    arguments:
-      - "'kernel/container'"
-      - "'container.go'"
+container_file_writer:
+  struct: "domain.FileWriter"
+  constructor: "domain.NewFileWriter"
+  arguments:
+    - "'kernel/container'"
+    - "'container.go'"
 
-  dispatcher_file_writer:
-    struct: "domain.FileWriter"
-    constructor: "domain.NewFileWriter"
-    arguments:
-      - "'kernel/event'"
-      - "'dispatcher.go'"
+dispatcher_file_writer:
+  struct: "domain.FileWriter"
+  constructor: "domain.NewFileWriter"
+  arguments:
+    - "'kernel/event'"
+    - "'dispatcher.go'"
 
-  autoload_file_writer:
-    struct: "domain.FileWriter"
-    constructor: "domain.NewFileWriter"
-    arguments:
-      - "'kernel/autoload'"
-      - "'autoload.go'"
+autoload_file_writer:
+  struct: "domain.FileWriter"
+  constructor: "domain.NewFileWriter"
+  arguments:
+    - "'kernel/autoload'"
+    - "'autoload.go'"
 
-  code_formatter:
-    struct: "domain.CodeFormatter"
+code_formatter:
+  struct: "domain.CodeFormatter"
 
-  container_builder:
-    struct: "builder.Container"
-    constructor: "builder.NewContainerBuilder"
-    arguments:
-      - "@yaml_reader"
-      - "@service_parser"
-      - "@listener_generator"
-      - "@service_generator"
-      - "@service_file_writer"
-      - "@code_formatter"
+container_builder:
+  struct: "builder.Container"
+  constructor: "builder.NewContainerBuilder"
+  arguments:
+    - "@yaml_reader"
+    - "@service_parser"
+    - "@listener_generator"
+    - "@service_generator"
+    - "@service_file_writer"
+    - "@code_formatter"
 
-  project_starter_builder:
-    struct: "builder.ProjectStarter"
-    constructor: "builder.NewProjectStarter"
-    arguments:
-      - "@config_yaml_file_writer"
-      - "@service_file_writer"
-      - "@container_file_writer"
-      - "@dispatcher_file_writer"
-      - "@autoload_file_writer"
-      - "@code_formatter"
-  test.example_listener:
-    struct: "test.ExampleListener"
+project_starter_builder:
+  struct: "builder.ProjectStarter"
+  constructor: "builder.NewProjectStarter"
+  arguments:
+    - "@config_yaml_file_writer"
+    - "@service_file_writer"
+    - "@container_file_writer"
+    - "@dispatcher_file_writer"
+    - "@autoload_file_writer"
+    - "@code_formatter"
+test.example_listener:
+  struct: "test.ExampleListener"
 
-  test.my_listener:
-    struct: "test.MyListener"
-
-listeners:
-  show_info:
-    - service: "@test.example_listener"
-      method: "ShowInfo"
-  show_info2:
-    - service: "@test.my_listener"
-      method: "Show"
+test.my_listener:
+  struct: "test.MyListener"
